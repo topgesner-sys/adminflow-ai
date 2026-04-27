@@ -5,11 +5,98 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AdminFlow AI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      body { margin:0; background:#0a0a0f; color:#e8e8f0; font-family:'Outfit',sans-serif; }
+      #pre-login { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+      .login-box { text-align:center; padding:48px 40px; background:#12121a; border:1px solid #2a2a3d; border-radius:20px; max-width:400px; width:90%; }
+      .logo-icon { width:56px; height:56px; border-radius:14px; margin:0 auto 20px; background:linear-gradient(135deg,#6c63ff,#ff6b6b); display:flex; align-items:center; justify-content:center; font-size:24px; }
+      h1 { font-family:'DM Serif Display',serif; font-size:28px; margin-bottom:10px; }
+      h1 span { color:#6c63ff; }
+      p.sub { color:#7a7a9a; font-size:14px; line-height:1.6; margin-bottom:32px; }
+      #google-btn { width:100%; padding:14px 20px; background:white; color:#333; border:none; border-radius:10px; cursor:pointer; font-size:15px; font-weight:600; font-family:'Outfit',sans-serif; display:flex; align-items:center; justify-content:center; gap:10px; }
+      #google-btn:hover { opacity:0.85; }
+      #google-btn:disabled { opacity:0.5; cursor:not-allowed; }
+      p.terms { color:#7a7a9a; font-size:11px; margin-top:16px; }
+      #root { display:none; }
+    </style>
   </head>
   <body>
+    <div id="pre-login">
+      <div class="login-box">
+        <div class="logo-icon">⚡</div>
+        <h1>Admin<span>Flow</span> AI</h1>
+        <p class="sub">Sistema multi-agente de automatización administrativa.</p>
+        <button id="google-btn">
+          <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.2 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.1 18.9 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.1l-6.2-5.2C29.3 35.4 26.8 36 24 36c-5.2 0-9.6-3.5-11.2-8.2l-6.5 5C9.7 39.6 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.4-2.4 4.5-4.4 5.9l6.2 5.2C40.7 36.3 44 30.6 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
+          Continuar con Google
+        </button>
+        <p class="terms">Al iniciar sesión aceptas los términos de uso</p>
+      </div>
+    </div>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Firebase SDK via CDN - completamente independiente de Vite -->
+    <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+      import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAZaRbb3UugE1IOuCHrIbnccxW9frVz2Vg",
+        authDomain: "adminflow-ai-2fe82.firebaseapp.com",
+        projectId: "adminflow-ai-2fe82",
+        storageBucket: "adminflow-ai-2fe82.firebasestorage.app",
+        messagingSenderId: "163954388617",
+        appId: "1:163954388617:web:2dc1d31ab321dc30f16058"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const provider = new GoogleAuthProvider();
+
+      // Boton de Google - login directo
+      document.getElementById('google-btn').addEventListener('click', () => {
+        const btn = document.getElementById('google-btn');
+        btn.disabled = true;
+        btn.textContent = 'Redirigiendo...';
+        signInWithRedirect(auth, provider).catch(err => {
+          btn.disabled = false;
+          btn.textContent = 'Continuar con Google';
+          alert('Error: ' + err.message);
+        });
+      });
+
+      // Manejar resultado del redirect de Google
+      getRedirectResult(auth).then(result => {
+        if (result?.user) {
+          // Usuario autenticado - ocultar login y mostrar app React
+          window.__firebaseApp = app;
+          window.__firebaseAuth = auth;
+          window.__firebaseUser = result.user;
+          document.getElementById('pre-login').style.display = 'none';
+          document.getElementById('root').style.display = 'block';
+        }
+      }).catch(err => {
+        console.error('Redirect result error:', err);
+      });
+
+      // Escuchar cambios de auth state
+      onAuthStateChanged(auth, user => {
+        if (user) {
+          window.__firebaseAuth = auth;
+          window.__firebaseUser = user;
+          document.getElementById('pre-login').style.display = 'none';
+          document.getElementById('root').style.display = 'block';
+          // Iniciar React app
+          if (!window.__reactStarted) {
+            window.__reactStarted = true;
+            import('/src/main.jsx');
+          }
+        } else {
+          document.getElementById('pre-login').style.display = 'flex';
+          document.getElementById('root').style.display = 'none';
+        }
+      });
+    </script>
   </body>
 </html>
